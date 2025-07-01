@@ -16,7 +16,7 @@ class ExploreEventsDataSourceImpl implements ExploreEventsDataSource {
       if (response.error != null) {
         responseData = ResponseData<EventsResponseModel>(success: false, message: response.error?['error'] as String?);
       } else {
-        responseData = ResponseData<EventsResponseModel>(success: true, data: response.data as EventsResponseModel);
+        responseData = ResponseData<EventsResponseModel>(success: true, data: EventsResponseModel.fromJson(response.data));
       }
     } catch (e) {
       responseData = ResponseData<EventsResponseModel>(success: false, message: 'An Error Occurred');
