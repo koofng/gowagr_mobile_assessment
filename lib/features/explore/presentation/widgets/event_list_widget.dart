@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../helpers/paginated_list_view.dart';
 import '../../domain/models/explore_model.dart';
 import 'event_card_widget.dart';
+import 'filter_widget.dart';
 
 class EventsListWidget extends StatefulWidget {
   const EventsListWidget({super.key, required this.model, required this.scrollController, required this.onFetchMore});
@@ -22,7 +23,11 @@ class _EventsListWidgetState extends State<EventsListWidget> {
     return CustomScrollView(
       controller: widget.scrollController,
       slivers: [
-        PinnedHeaderSliver(child: Placeholder()),
+        SliverPadding(
+          padding: EdgeInsetsGeometry.only(bottom: 10.0),
+          sliver: PinnedHeaderSliver(child: CategorySelector()),
+        ),
+
         PaginatedSliverListView(
           items: widget.model.events,
           hasMore: widget.model.hasMore,

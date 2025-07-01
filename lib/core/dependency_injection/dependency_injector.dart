@@ -6,6 +6,7 @@ import 'package:gowagr_mobile_assessment/core/services/network/network_service_a
 import 'package:gowagr_mobile_assessment/core/services/network/network_service_impl.dart';
 import 'package:gowagr_mobile_assessment/features/explore/data/data_sources/explore_events_data_source_abstract.dart';
 import 'package:gowagr_mobile_assessment/features/explore/data/data_sources/explore_events_data_source_impl.dart';
+import 'package:gowagr_mobile_assessment/features/explore/data/local/explore_local_repository.dart';
 import 'package:gowagr_mobile_assessment/features/explore/data/repository/explore_repository.dart';
 import 'package:gowagr_mobile_assessment/features/explore/data/repository/explore_repository_impl.dart';
 import 'package:gowagr_mobile_assessment/features/explore/domain/models/event_model.dart';
@@ -19,13 +20,15 @@ void setupDependencies() {
   di.registerLazySingleton<NetworkServiceAbstract>(() => NetworkServiceImpl());
 
   // register cache service
-  di.registerLazySingleton<CacheServiceAbstract<Event>>(() => CacheServiceImpl<Event>());
+  CacheRegistry.register<Event>(tableName: 'event_cache', fromJson: (json) => Event.fromJson(json), toJson: (event) => event.toJson());
+  di.registerLazySingleton<CacheService<Event>>(() => CacheServiceImpl<Event>());
 
   // register all data sources
   di.registerLazySingleton<ExploreEventsDataSource>(() => ExploreEventsDataSourceImpl());
 
   // register all repository
   di.registerLazySingleton<ExploreRepository>(() => ExploreRepositoryImpl());
+  di.registerLazySingleton<ExploreLocalRepository>(() => ExploreLocalRepository());
 }
 
 void setupCacheRegistry() {

@@ -1,22 +1,24 @@
-import 'dart:async';
 import 'dart:convert';
-import 'package:sqflite/sqflite.dart';
+import 'dart:developer';
+
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
-import 'package:gowagr_mobile_assessment/core/services/caching/cache_registry.dart';
-import 'package:gowagr_mobile_assessment/core/services/caching/cache_service_abstract.dart';
+import 'cache_registry.dart';
+import 'cache_service_abstract.dart';
 
-class CacheServiceImpl<T> implements CacheServiceAbstract<T> {
+class CacheServiceImpl<T> implements CacheService<T> {
   late final String _tableName;
   late final T Function(String) _fromJson;
   late final String Function(T) _toJson;
+
   static Database? _db;
 
   CacheServiceImpl() {
     final meta = CacheRegistry.get<T>();
     _tableName = meta.tableName;
-    _fromJson = (str) => meta.fromJson(jsonDecode(str)) as T;
+    _fromJson = (json) => meta.fromJson(jsonDecode(json)) as T;
     _toJson = (value) => jsonEncode(meta.toJson(value));
   }
 
@@ -27,13 +29,8 @@ class CacheServiceImpl<T> implements CacheServiceAbstract<T> {
     _db = await openDatabase(
       path,
       version: 1,
-      onCreate: (db, _) {
-        return db.execute('''
-        CREATE TABLE IF NOT EXISTS $_tableName (
-          key TEXT PRIMARY KEY,
-          value TEXT
-        )
-      ''');
+      onCreate: (db, _) async {
+        await db.execute('CREATE TABLE IF NOT EXISTS $_tableName (key TEXT PRIMARY KEY, value TEXT)');
       },
     );
     return _db!;
@@ -70,7 +67,28 @@ class CacheServiceImpl<T> implements CacheServiceAbstract<T> {
   @override
   Future<bool> contains(String key) async {
     final db = await _database;
-    final result = await db.query(_tableName, columns: ['key'], where: 'key = ?', whereArgs: [key]);
+    final result = await db.query(_tableName, where: 'key = ?', whereArgs: [key]);
     return result.isNotEmpty;
+  }
+
+  @override
+  Future<void> insertItems(String key, List<T> items) async {
+    final dbClient = await _database;
+    final batch = dbClient.batch();
+    for (final item in items) {
+      batch.insert(_tableName, {'key': key, 'value': _toJson(item)}, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    await batch.commit(noResult: true);
+  }
+
+  @override
+  Future<List<T>> getAllItems(String key, T Function(Map<String, Object?> map) fromMap) async {
+    final dbClient = await _database;
+    List<Map<String, Object?>> result = await dbClient.query(_tableName);
+    return result.map((map) => fromMap(map)).toList();
+
+    // result.map(fromMap).toList();
+
+    // result.map((map) => Item.fromMap(map)).toList();
   }
 }
